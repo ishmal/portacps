@@ -1,0 +1,7 @@
+{
+  "name": "PortaCPS",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular"
+}
