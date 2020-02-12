@@ -12,7 +12,10 @@ function createWindow() {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 1200,
-		height: 700
+		height: 700,
+		webPreferences: {
+			nodeIntegration: true
+		}
 	});
 
 	const indexPath = path.join(__dirname, '/../www/index.html');

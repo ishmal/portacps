@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 
-import { saveAs } from 'file-saver';
+import { DialogService } from '../services/dialog.service';
+
 
 @Component({
 	selector: 'app-tab1',
@@ -11,11 +12,11 @@ import { saveAs } from 'file-saver';
 })
 export class HomePage {
 
-	constructor(private menu: MenuController) {}
+	constructor(private menu: MenuController, private dialogService: DialogService) {}
 
-	showOpenDialog() {
+	async showOpenDialog() {
 		console.log("showOpenDialog");
-		document.getElementById('file-input').click();
+		const result = await this.dialogService.showOpenDialog("Open codeplug file");
 		this.menu.close();
 	}
 
@@ -24,11 +25,10 @@ export class HomePage {
 		this.menu.close();
 	}
 
-	showSaveDialog() {
+	async showSaveDialog() {
 		console.log("showSaveDialog");
 		const content = '{ mydata: "blah, blah" }';
-		const blob = new Blob([content], {type: "text/json;charset=utf-8"});
-		const fs = saveAs(blob, "testMe.json", { autoBom: true })
+		const result = await this.dialogService.showSaveAsDialog("Save codeplug file");
 		this.menu.close();
 	}
 
