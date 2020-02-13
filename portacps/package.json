@@ -17,7 +17,9 @@
 		"windows-release": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=win32 --arch=ia32 --icon=src/assets/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName='Electron Tutorial App'",
 		"linux-release": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=src/assets/icon.png --prune=true --out=release-builds",
 		"mac-build": "electron-installer-dmg ./release-builds/ionic-desktop-darwin-x64/ionic-desktop.app builds/ionic-desktop",
-		"windows-build": "node src/windows-build.js"
+		"windows-build": "node src/windows-build.js",
+		"postinstall": "electron-rebuild",
+		"electron-rebuild": "electron-rebuild f -w node-hid"
 	},
 	"private": true,
 	"dependencies": {
@@ -32,8 +34,7 @@
 		"@ionic-native/status-bar": "^5.0.0",
 		"@ionic/angular": "^5.0.0",
 		"core-js": "^2.5.4",
-		"electron": "^8.0.0",
-		"node-hid": "^1.1.0",
+		"node-hid": "^1.2.0",
 		"rxjs": "~6.5.1",
 		"tslib": "^1.9.0",
 		"zone.js": "~0.9.1"
@@ -44,14 +45,16 @@
 		"@angular/compiler": "~8.2.14",
 		"@angular/compiler-cli": "~8.2.14",
 		"@angular/language-service": "~8.2.14",
-		"@ionic/angular-toolkit": "^2.1.1",
+		"@ionic/angular-toolkit": "^2.1.2",
 		"@types/file-saver": "^2.0.1",
 		"@types/jasmine": "~3.3.8",
 		"@types/jasminewd2": "~2.0.3",
 		"@types/node": "^8.9.5",
 		"codelyzer": "^5.0.0",
+		"electron": "^8.0.0",
 		"electron-installer-dmg": "^3.0.0",
 		"electron-packager": "^14.2.1",
+		"electron-rebuild": "^1.10.0",
 		"jasmine-core": "~3.4.0",
 		"jasmine-spec-reporter": "~4.2.1",
 		"karma": "~4.1.0",

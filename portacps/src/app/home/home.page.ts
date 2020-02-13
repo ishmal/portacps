@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 
 import { DialogService } from '../services/dialog.service';
+import { HidService } from '../services/hid.service';
 
 
 @Component({
@@ -12,7 +13,11 @@ import { DialogService } from '../services/dialog.service';
 })
 export class HomePage {
 
-	constructor(private menu: MenuController, private dialogService: DialogService) {}
+	constructor(
+		private menu: MenuController, 
+		private dialogService: DialogService,
+		private hidService: HidService
+		) {}
 
 	async showOpenDialog() {
 		console.log("showOpenDialog");
@@ -39,6 +44,7 @@ export class HomePage {
 
 	doDownload() {
 		console.log("doDownload");
+		this.hidService.download();
 		this.menu.close();
 	}
 
