@@ -18,6 +18,29 @@ const CMD = {
 	WRITE: 87, // W
 };
 
+const GD77_MODEL = [
+	77, // M
+	68, // D
+	45, // -
+	55, // 7
+	54, // 6
+	48, // 0
+	80, // P
+	255
+];
+
+const RD5R_MODEL = [ 
+	66, // B
+	70, // F
+	45, // -
+	53, // 5
+	82, // R
+	255, 
+	255,
+	255
+  ];
+
+
 
 function logj(msg, obj) {
 	const json = JSON.stringify(obj, null, 2);
@@ -32,28 +55,55 @@ const zeroFill = (arr, len) => {
 	return arr;
 };
 
-const toOutput = (data) => {
-	const lenLo = data.length & 255;
-	const lenHi = (data.length >> 8) && 255;
-	const header = [1, 0, lenLo, lenHi];
-	const buf = header.concat(data);
-	const outbuf = zeroFill(buf, OUTPUT_REPORT_LEN);
-	return outbuf;
-};
-
-const fromOutput = (data) => {
-	const len = data[2] + data[3] * 256;
-	const out = [];
-	for (let i = 0; i < len ; i++) {
-		out[i] = data[i + 4];
-	}
-	return out;
-};
 
 
+/**
+ * For sending and receiving codeplugs
+ */
 class Hid {
 	constructor() {
+		this.dev = null;
+	}
 
+	write(data) {
+		const lenLo = data.length & 255;
+		const lenHi = (data.length >> 8) && 255;
+		const header = [1, 0, lenLo, lenHi];
+		const buf = header.concat(data);
+		const outbuf = zeroFill(buf, OUTPUT_REPORT_LEN);
+		const outLen = this.dev.write(outbuf)
+		return outLen;
+	}
+
+	read() {
+		const data = this.dev.readSync();
+		const len = data[2] + data[3] * 256;
+		const out = [];
+		for (let i = 0; i < len ; i++) {
+			out[i] = data[i + 4];
+		}
+		return out;	
+	}
+
+	getModel(bytes) {
+		let str = "";
+		for (let i = 0 ; i < 8 ; i++) {
+			const b = bytes[i];
+			if (b === 255) {
+				break
+			}
+			const ch = String.fromCharCode(b);
+			str += ch;
+		}
+		return str;
+	}
+
+	getAtAddr(addr, len) {
+		const addrHi = (addr >> 8 ) & 255;
+		const addrLo = addr & 255;
+		this.write([ 82, addrHi, addrLo, len]);
+		const data = this.read();
+		return data;
 	}
 
 	async execute() {
@@ -65,30 +115,37 @@ class Hid {
 			return;
 		}
 		logj("device found", devInfo);
-		const dev = new HID.HID(HID_VendorId, HID_ProductId);
-		// dev.on("data", (data) => {
-		//	logj("data", data);
-		//});
-		// dev.setNonBlocking(true);
-		// logj("device", dev);
-		const p_read = promisify(dev.read.bind(dev));
+		this.dev = new HID.HID(HID_VendorId, HID_ProductId);
 		try {
-			const nrbytes = dev.write(toOutput(CMD.PRG));
+			const nrbytes = this.write(CMD.PRG);
 			console.log("bytes: " + nrbytes);
-			const rawData = dev.readSync();
-			const ack = fromOutput(rawData);
+			const ack = this.read();
 			logj("data", ack);
 			if (ack[0] !== CMD.ACK[0]) {
 				return;
 			}
-			dev.write(toOutput(CMD.PRG2));
-			const rawData2 = dev.readSync();
-			const ack2 = fromOutput(rawData2);
-			setTimeout(() => dev.close(), 5000);
-			logj("data", ack2);
+			this.write(CMD.PRG2);
+			let data = this.read();
+			logj("data", data);
+			const model = this.getModel(data);
+			console.log("model: " + model);
+
+			this.write(CMD.ACK);
+			const ack2 = this.read();
+			logj("ack2", ack2);
+			if (ack2[0] !== CMD.ACK[0]) {
+				return;
+			}
+
+			const ADDR_GENERAL_SET = 224;
+			const addrPwd = ADDR_GENERAL_SET + 27;
+			data = this.getAtAddr(addrPwd, 8);
+			logj("dataAt", data);
+
+			setTimeout(() => this.dev.close(), 5000);
 		} catch (e) {
 			console.log(e);
-			dev.close();
+			this.dev.close();
 		}
 
 
