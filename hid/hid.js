@@ -1,6 +1,8 @@
 const HID = require('node-hid');
 const promisify = require('util').promisify;
 
+const Forms = require("./forms");
+
 const HID_VendorId = 5538; // 0x15a2
 const HID_ProductId = 115; // 0x73
 const OUTPUT_REPORT_LEN = 42;
@@ -137,8 +139,8 @@ class Hid {
 				return;
 			}
 
-			const ADDR_GENERAL_SET = 224;
-			const addrPwd = ADDR_GENERAL_SET + 27;
+			const gen = Forms.General;
+			const addrPwd = gen.BASE + gen.prgPwd;
 			data = this.getAtAddr(addrPwd, 8);
 			logj("dataAt", data);
 
