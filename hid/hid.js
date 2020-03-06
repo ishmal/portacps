@@ -3,8 +3,11 @@ const promisify = require('util').promisify;
 
 const Forms = require("./forms");
 
-const HID_VendorId = 5538; // 0x15a2
-const HID_ProductId = 115; // 0x73
+const CABLE_DEVICE = {
+	vendorId: 5538, // 0x15a2
+	productId: 115 // 0x73
+};
+
 const OUTPUT_REPORT_LEN = 42;
 
 const CMD = {
@@ -40,8 +43,12 @@ const RD5R_MODEL = [
 	255, 
 	255,
 	255
-  ];
+];
 
+const MMAP = {
+	ADDR_DMR_CONTACT:6024, // 0x1788
+	ADDR_CHANNEL: 14208, // 0x3780
+}
 
 
 function logj(msg, obj) {
@@ -87,6 +94,10 @@ class Hid {
 		return out;	
 	}
 
+	// 0x000000 - 0x01FFFF // codeplug
+	// 0x000000
+	// 0x001000
+
 	getModel(bytes) {
 		let str = "";
 		for (let i = 0 ; i < 8 ; i++) {
@@ -108,16 +119,7 @@ class Hid {
 		return data;
 	}
 
-	async execute() {
-		const devices = HID.devices();
-		// logj("devices", devices);
-		const devInfo = devices.find(d => d.vendorId === HID_VendorId && d.productId === HID_ProductId);
-		if (!devInfo) {
-			console.log("device not found");
-			return;
-		}
-		logj("device found", devInfo);
-		this.dev = new HID.HID(HID_VendorId, HID_ProductId);
+	async readCP() {
 		try {
 			const nrbytes = this.write(CMD.PRG);
 			console.log("bytes: " + nrbytes);
@@ -149,31 +151,32 @@ class Hid {
 			console.log(e);
 			this.dev.close();
 		}
+	}
 
+	async connect() {
+		const devices = HID.devices();
+		// logj("devices", devices);
+		const devInfo = devices.find(d => d.vendorId === CABLE_DEVICE.vendorId &&
+			 d.productId === CABLE_DEVICE.productId);
+		if (!devInfo) {
+			console.log("device not found");
+			return;
+		}
+		logj("device found", devInfo);
+		this.dev = new HID.HID(CABLE_DEVICE.vendorId, CABLE_DEVICE.productId);
+	}
+
+	async disconnect() {
 
 	}
 
-	execute2() {
-		let len = 8;
-		const doIt = () => {
-			const dev = new HID.HID(HID_VendorId, HID_ProductId);
-			dev.on("data", (data) => {
-				logj("data", data);
-			});
-				console.log("len: " + len);
-			const msg = toOutput(CMD.PRG, len);
-			dev.write(msg);
-			len++;
-			setTimeout(() => {
-				dev.close();
-				if (len < 77) {
-					doIt();
-				}
-			}, 700);
-		};
-		doIt();
+	async execute() {
+		await this.connect();
+		await this.readCP();
+		await this.disconnect();
 	}
-}
+
+} // class
 
 async function runme() {
 	const t = new Hid();
