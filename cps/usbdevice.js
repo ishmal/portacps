@@ -40,7 +40,8 @@ class HidDevice extends Device {
 		if (!this.inited) {
 			await this.init();
 		}
-		this.dev.readSync();
+		const data = this.dev.readSync();
+		return data;
 	}
 
 	async write(dataArray) {
@@ -69,6 +70,7 @@ class WebUsbDevice extends Device {
 		this.vendorId = vendorId;
 		this.productId = productId;
 		this.inited = false;
+		this.listDevices();
 	}
 
 	async init() {
@@ -82,14 +84,20 @@ class WebUsbDevice extends Device {
 		await this.dev.open();
 		await this.dev.selectConfiguration(1);
 		await this.dev.claimInterface(0);
-		inited = true;
+		this.inited = true;
+	}
+
+	async listDevices() {
+		const devices = await navigator.usb.getDevices();
+		devices.forEach(d => console.log("device: " + JSON.stringify(d)));
+		return devices;
 	}
 
 	async read(len) {
 		if (!this.inited) {
 			await this.init();
 		}
-		const result = await this.dev.transferIn(0, len);
+		const result = await this.dev.transferIn(5, 64);
 		return result.data;
 	}
 
@@ -97,8 +105,7 @@ class WebUsbDevice extends Device {
 		if (!this.inited) {
 			await this.init();
 		}
-		const data = new Uint8Array([1, ...dataArray]);
-		await device.transferOut(0, data);
+		await this.dev.transferOut(4, dataArray);
 	}
 
 	async close() {

@@ -1,7 +1,5 @@
-const HID = require('node-hid');
-const promisify = require('util').promisify;
-
-const Forms = require("./forms");
+import HID from 'node-hid';
+import { Forms } from "./forms.js";
 
 const CABLE_DEVICE = {
 	vendorId: 5538, // 0x15a2

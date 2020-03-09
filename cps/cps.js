@@ -72,18 +72,18 @@ class Cps {
 		this.dev = null;
 	}
 
-	write(data) {
+	async write(data) {
 		const lenLo = data.length & 255;
 		const lenHi = (data.length >> 8) && 255;
 		const header = [1, 0, lenLo, lenHi];
 		const buf = header.concat(data);
 		const outbuf = zeroFill(buf, OUTPUT_REPORT_LEN);
-		const outLen = this.dev.write(outbuf);
+		const outLen = await this.dev.write(outbuf);
 		return outLen;
 	}
 
-	read() {
-		const data = this.dev.read();
+	async read() {
+		const data = await this.dev.read();
 		const len = data[2] + data[3] * 256;
 		const out = [];
 		for (let i = 0; i < len ; i++) {
@@ -109,31 +109,31 @@ class Cps {
 		return str;
 	}
 
-	getAtAddr(addr, len) {
+	async getAtAddr(addr, len) {
 		const addrHi = (addr >> 8 ) & 255;
 		const addrLo = addr & 255;
 		this.write([ 82, addrHi, addrLo, len]);
-		const data = this.read();
+		const data = await this.read();
 		return data;
 	}
 
 	async readCP() {
 		try {
-			const nrbytes = this.write(CMD.PRG);
+			const nrbytes = await this.write(CMD.PRG);
 			console.log("bytes: " + nrbytes);
-			const ack = this.read();
+			const ack = await this.read();
 			logj("data", ack);
 			if (ack[0] !== CMD.ACK[0]) {
 				return;
 			}
-			this.write(CMD.PRG2);
-			let data = this.read();
+			await this.write(CMD.PRG2);
+			let data = await this.read();
 			logj("data", data);
 			const model = this.getModel(data);
 			console.log("model: " + model);
 
-			this.write(CMD.ACK);
-			const ack2 = this.read();
+			await this.write(CMD.ACK);
+			const ack2 = await this.read();
 			logj("ack2", ack2);
 			if (ack2[0] !== CMD.ACK[0]) {
 				return;
@@ -141,13 +141,13 @@ class Cps {
 
 			const gen = Forms.General;
 			const addrPwd = gen.BASE + gen.prgPwd;
-			data = this.getAtAddr(addrPwd, 8);
+			data = await this.getAtAddr(addrPwd, 8);
 			logj("dataAt", data);
 
-			setTimeout(() => this.dev.close(), 5000);
+			setTimeout(async() => await this.dev.close(), 5000);
 		} catch (e) {
 			console.log(e);
-			this.dev.close();
+			await this.dev.close();
 		}
 	}
 
@@ -156,7 +156,7 @@ class Cps {
 	}
 
 	async disconnect() {
-		this.dev.close();
+		await this.dev.close();
 	}
 
 	async execute() {
@@ -176,4 +176,17 @@ async function runme() {
 	}
 }
 
-runme();
+/**
+ * Only on command line.
+ */
+if (typeof window !== "undefined") {
+	window.document.addEventListener("DOMContentLoaded", () => {
+		const tool = new Cps();
+		const button = document.getElementById('run-button');
+		button.addEventListener('click', async () => {
+			await tool.execute();
+		});
+	});
+} else {
+	runme();
+}
