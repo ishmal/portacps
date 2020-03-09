@@ -1,3 +1,5 @@
+
+
 /**
  * Base class for a USB device
  */
@@ -20,20 +22,38 @@ class Device {
  */
 class HidDevice extends Device {
 
-	async constructor(vendorId, productId) {
-		const HID = require('node-hid');
-		this.dev = new HID.HID(vendorId, productId);
+	constructor(vendorId, productId) {
+		super();
+		this.vendorId = vendorId;
+		this.productId = productId;
+		this.inited = false;
+	}
+
+	async init() {
+		const module = await import('node-hid');
+		const HID = module.default;
+		this.dev = new HID.HID(this.vendorId, this.productId);
+		this.inited = true;
 	}
 
 	async read() {
+		if (!this.inited) {
+			await this.init();
+		}
 		this.dev.readSync();
 	}
 
 	async write(dataArray) {
+		if (!this.inited) {
+			await this.init();
+		}
 		this.dev.write(dataArray)
 	}
 
 	async close() {
+		if (!this.inited) {
+			return;
+		}
 		this.dev.close();
 	}
 }
@@ -44,10 +64,17 @@ class HidDevice extends Device {
  */
 class WebUsbDevice extends Device {
 
-	async constructor(vendorId, productId) {
+	constructor(vendorId, productId) {
+		super();
+		this.vendorId = vendorId;
+		this.productId = productId;
+		this.inited = false;
+	}
+
+	async init() {
 		const filter = {
-			vendorId,
-			productId
+			vendorId: this.vendorId,
+			productId: this.productId
 		};
 		this.dev = await navigator.usb.requestDevice({
 			filters: [filter]
@@ -55,19 +82,29 @@ class WebUsbDevice extends Device {
 		await this.dev.open();
 		await this.dev.selectConfiguration(1);
 		await this.dev.claimInterface(0);
+		inited = true;
 	}
 
 	async read(len) {
+		if (!this.inited) {
+			await this.init();
+		}
 		const result = await this.dev.transferIn(0, len);
 		return result.data;
 	}
 
 	async write(dataArray) {
+		if (!this.inited) {
+			await this.init();
+		}
 		const data = new Uint8Array([1, ...dataArray]);
 		await device.transferOut(0, data);
 	}
 
 	async close() {
+		if (!this.inited) {
+			return;
+		}
 		await this.dev.close();
 	}
 }
@@ -80,12 +117,17 @@ class WebUsbDevice extends Device {
  * @param {number} vendorId 
  * @param {number} productId 
  */
-export const UsbDevice = async (vendorId, productId) => {
-	if (require) {
-		return await new HidDevice(vendorId, productId);
+export const UsbDevice = (vendorId, productId) => {
+	if (typeof window === "undefined") {
+		return new HidDevice(vendorId, productId);
 	} else if (navigator.usb) {
-		return await new WebUsbDevice(vendorId, productId);
+		return new WebUsbDevice(vendorId, productId);
 	} else {
 		throw new Error("no usb api available");
 	}
+}
+
+
+if (typeof module !== "undefined") {
+	module.exports = UsbDevice;
 }

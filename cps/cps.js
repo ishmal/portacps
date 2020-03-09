@@ -1,5 +1,5 @@
-import { UsbDevice } from "./usbdevice";
-import { Forms } from "./forms";
+import { UsbDevice } from "./usbdevice.js";
+import { Forms } from "./forms.js";
 
 const CABLE_DEVICE = {
 	vendorId: 5538, // 0x15a2
@@ -83,7 +83,7 @@ class Cps {
 	}
 
 	read() {
-		const data = this.dev.readSync();
+		const data = this.dev.read();
 		const len = data[2] + data[3] * 256;
 		const out = [];
 		for (let i = 0; i < len ; i++) {
@@ -168,7 +168,7 @@ class Cps {
 } // class
 
 async function runme() {
-	const t = new Hid();
+	const t = new Cps();
 	try {
 		await t.execute();
 	} catch(e) {
