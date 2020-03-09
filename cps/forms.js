@@ -23,8 +23,7 @@ const General = {
 	prgPwd: 32
 };
 
-const Forms = {
+export const Forms = {
 	General
 };
 
-module.exports = Forms;

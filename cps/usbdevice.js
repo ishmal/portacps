@@ -1,5 +1,5 @@
 /**
- * 
+ * Base class for a USB device
  */
 class Device {
 	async read() {
@@ -16,7 +16,7 @@ class Device {
 }
 
 /**
- * 
+ * USB device implemented with the HID interface
  */
 class HidDevice extends Device {
 
@@ -40,7 +40,7 @@ class HidDevice extends Device {
 
 
 /**
- * 
+ * USB device implemented with WebUSB
  */
 class WebUsbDevice extends Device {
 
@@ -73,6 +73,13 @@ class WebUsbDevice extends Device {
 }
 
 
+/**
+ * Factory function for getting an environment-specific implementation
+ * of a USB device
+ *  
+ * @param {number} vendorId 
+ * @param {number} productId 
+ */
 export const UsbDevice = async (vendorId, productId) => {
 	if (require) {
 		return await new HidDevice(vendorId, productId);
