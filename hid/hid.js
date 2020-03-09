@@ -80,7 +80,7 @@ class Hid {
 		const header = [1, 0, lenLo, lenHi];
 		const buf = header.concat(data);
 		const outbuf = zeroFill(buf, OUTPUT_REPORT_LEN);
-		const outLen = this.dev.write(outbuf)
+		const outLen = this.dev.write(outbuf);
 		return outLen;
 	}
 
