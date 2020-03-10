@@ -1,5 +1,5 @@
 {
-  "name": "hid",
+  "name": "ftdi",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,9 +8,7 @@
   },
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "devDependencies": {
-    "node-hid": "^1.2.0",
+  "dependencies": {
     "usb": "^1.6.2"
   }
 }

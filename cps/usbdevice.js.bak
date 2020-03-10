@@ -20,7 +20,7 @@ class Device {
 /**
  * USB device implemented with the HID interface
  */
-class NodeUsbDevice extends Device {
+class HidDevice extends Device {
 
 	constructor(vendorId, productId) {
 		super();
@@ -30,41 +30,25 @@ class NodeUsbDevice extends Device {
 	}
 
 	async init() {
-		const module = await import('usb');
-		const usb = module.default;
-		this.dev = usb.findByIds(this.vendorId, this.productId);
-		this.dev.open();
-		const p_claim = promisify(this.dev.__claimInterface.bind(this.dev));
-		await p_claim(0);
-		this.iface = this.dev.interface();
-		this.inited = true;	}
+		const module = await import('node-hid');
+		const HID = module.default;
+		this.dev = new HID.HID(this.vendorId, this.productId);
+		this.inited = true;
+	}
 
 	async read() {
 		if (!this.inited) {
 			await this.init();
 		}
-		const inEndpoint = this.iface.endpoints[0];
-		inEndpoint.transfer(64, (e, d) => {
-			if (e) {
-				throw new Error(e);
-			} else {
-				return d;
-			}
-		});
+		const data = this.dev.readSync();
+		return data;
 	}
 
 	async write(dataArray) {
 		if (!this.inited) {
 			await this.init();
 		}
-		const outEndpoint = this.iface.endpoints[1];
-		outEndpoint.transfer(dataArray, (e) => {
-			if (e) {
-				throw new Error(`write: ${e}`);
-			} else {
-				return;
-			}
-		});
+		this.dev.write(dataArray)
 	}
 
 	async close() {
@@ -142,7 +126,7 @@ class WebUsbDevice extends Device {
  */
 export const UsbDevice = (vendorId, productId) => {
 	if (typeof window === "undefined") {
-		return new NodeUsbDevice(vendorId, productId);
+		return new HidDevice(vendorId, productId);
 	} else if (navigator.usb) {
 		return new WebUsbDevice(vendorId, productId);
 	} else {

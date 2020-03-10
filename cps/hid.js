@@ -1,7 +1,7 @@
 import HID from 'node-hid';
 import { Forms } from "./forms.js";
 
-const CABLE_DEVICE = {
+const BF_DEVICE = {
 	vendorId: 5538, // 0x15a2
 	productId: 115 // 0x73
 };
@@ -63,6 +63,8 @@ const zeroFill = (arr, len) => {
 };
 
 
+const CODEPLUG_BASE = 0x7B000;
+const CODEPLUG_END = 0x8EE9F;
 
 /**
  * For sending and receiving codeplugs
@@ -92,16 +94,12 @@ class Hid {
 		return out;	
 	}
 
-	// 0x000000 - 0x01FFFF // codeplug
-	// 0x000000
-	// 0x001000
-
 	getModel(bytes) {
 		let str = "";
 		for (let i = 0 ; i < 8 ; i++) {
 			const b = bytes[i];
 			if (b === 255) {
-				break
+				break;
 			}
 			const ch = String.fromCharCode(b);
 			str += ch;
@@ -139,10 +137,14 @@ class Hid {
 				return;
 			}
 
-			const gen = Forms.General;
-			const addrPwd = gen.BASE + gen.prgPwd;
-			data = this.getAtAddr(addrPwd, 8);
-			logj("dataAt", data);
+			// const gen = Forms.General;
+			// const addrPwd = gen.BASE + gen.prgPwd;
+			// data = this.getAtAddr(addrPwd, 8);
+			// logj("dataAt", data);
+
+			const dmrIdAddr = CODEPLUG_BASE + 232;
+			data = this.getAtAddr(dmrIdAddr, 4);
+			logj("dmrId", data);
 
 			setTimeout(() => this.dev.close(), 5000);
 		} catch (e) {
@@ -152,16 +154,17 @@ class Hid {
 	}
 
 	async connect() {
+		HID.setDriverType("libusb");
 		const devices = HID.devices();
-		// logj("devices", devices);
-		const devInfo = devices.find(d => d.vendorId === CABLE_DEVICE.vendorId &&
-			 d.productId === CABLE_DEVICE.productId);
-		if (!devInfo) {
-			console.log("device not found");
+		logj("devices", devices);
+		const df = BF_DEVICE;
+		const bfDevInfo = devices.find(d => d.vendorId === df.vendorId && d.productId === df.productId);
+		if (bfDevInfo) {
+			logj("bf device found", bfDevInfo);
+			this.dev = new HID.HID(df.vendorId, df.productId);
 			return;
 		}
-		logj("device found", devInfo);
-		this.dev = new HID.HID(CABLE_DEVICE.vendorId, CABLE_DEVICE.productId);
+		console.log("device not found");
 	}
 
 	async disconnect() {
